@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  garava:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: garava
+    restart: unless-stopped
+    volumes:
+      # Persist database and tokens
+      - garava-data:/data
+    environment:
+      - STRAVA_CLIENT_ID=${STRAVA_CLIENT_ID}
+      - STRAVA_CLIENT_SECRET=${STRAVA_CLIENT_SECRET}
+      - GARAVA_POLL_INTERVAL=${GARAVA_POLL_INTERVAL:-10}
+      - GARAVA_BLOCKED_TYPES=${GARAVA_BLOCKED_TYPES:-strength_training}
+      - GARAVA_LOG_LEVEL=${GARAVA_LOG_LEVEL:-INFO}
+    # Uncomment for health check endpoint (future feature)
+    # healthcheck:
+    #   test: ["CMD", "python", "-m", "garava", "status"]
+    #   interval: 5m
+    #   timeout: 10s
+    #   retries: 3
+
+volumes:
+  garava-data:
