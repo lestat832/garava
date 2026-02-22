@@ -44,6 +44,7 @@ htmlcov/
 .env
 .garth/
 .serena/
+.mcp.json
 
 # Logs
 *.log
