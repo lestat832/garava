@@ -16,12 +16,11 @@ services:
       - GARAVA_POLL_INTERVAL=${GARAVA_POLL_INTERVAL:-10}
       - GARAVA_BLOCKED_TYPES=${GARAVA_BLOCKED_TYPES:-strength_training}
       - GARAVA_LOG_LEVEL=${GARAVA_LOG_LEVEL:-INFO}
-    # Uncomment for health check endpoint (future feature)
-    # healthcheck:
-    #   test: ["CMD", "python", "-m", "garava", "status"]
-    #   interval: 5m
-    #   timeout: 10s
-    #   retries: 3
+    healthcheck:
+      test: ["CMD", "python", "-m", "garava", "status"]
+      interval: 5m
+      timeout: 10s
+      retries: 3
 
 volumes:
   garava-data:

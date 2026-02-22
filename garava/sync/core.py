@@ -6,6 +6,8 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 
+from garth.exc import GarthException
+
 from garava.config import Config
 from garava.database import Database
 from garava.garmin.activities import get_recent_activities
@@ -103,6 +105,45 @@ class SyncEngine:
                 "Strava not authenticated. Run 'garava setup' to authorize."
             )
 
+    def _process_with_auth_recovery(
+        self,
+        garmin_activity,
+        initial_sync_time: str | None,
+    ) -> ProcessResult | None:
+        """Process an activity, retrying once if Garmin auth expires.
+
+        Returns None if auth recovery fails (caller should abort).
+        """
+        try:
+            return process_activity(
+                garmin_activity=garmin_activity,
+                db=self.db,
+                garmin_client=self.garmin,
+                strava_client=self.strava,
+                activity_filter=self.filter,
+                initial_sync_time=initial_sync_time,
+            )
+        except GarthException:
+            logger.warning(
+                f"Garmin API error for {garmin_activity.activity_id}, "
+                "attempting re-auth..."
+            )
+
+        # Attempt re-auth and retry once
+        try:
+            self._ensure_auth()
+            return process_activity(
+                garmin_activity=garmin_activity,
+                db=self.db,
+                garmin_client=self.garmin,
+                strava_client=self.strava,
+                activity_filter=self.filter,
+                initial_sync_time=initial_sync_time,
+            )
+        except (GarthException, AuthenticationError) as e:
+            logger.error(f"Re-auth/retry failed for {garmin_activity.activity_id}: {e}")
+            return None
+
     def run_cycle(self) -> SyncCycleResult:
         """Execute one complete sync cycle.
 
@@ -127,14 +168,16 @@ class SyncEngine:
 
             # Step 4: Process each activity
             for garmin_activity in activities:
-                result = process_activity(
-                    garmin_activity=garmin_activity,
-                    db=self.db,
-                    garmin_client=self.garmin,
-                    strava_client=self.strava,
-                    activity_filter=self.filter,
-                    initial_sync_time=initial_sync_time,
+                result = self._process_with_auth_recovery(
+                    garmin_activity, initial_sync_time,
                 )
+
+                if result is None:
+                    # Auth recovery failed — abort remaining activities
+                    raise AuthenticationError(
+                        "Garmin session expired mid-cycle and re-auth failed"
+                    )
+
                 results.append(result)
 
                 # Update run counters

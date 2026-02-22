@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 import logging
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Iterator
 
 from garava.models import Activity, ActivityStatus, StravaToken, SyncRun
 
@@ -86,12 +86,29 @@ class Database:
     # Activity operations
 
     def activity_exists(self, garmin_activity_id: str) -> bool:
-        """Check if an activity has already been processed."""
+        """Check if an activity has been successfully processed.
+
+        Returns False for failed activities so they can be retried.
+        """
         with self._connect() as conn:
             cursor = conn.execute(
-                "SELECT 1 FROM activities WHERE garmin_activity_id = ?", (garmin_activity_id,)
+                "SELECT 1 FROM activities WHERE garmin_activity_id = ? AND status != ?",
+                (garmin_activity_id, ActivityStatus.FAILED.value),
             )
             return cursor.fetchone() is not None
+
+    def delete_failed_activity(self, garmin_activity_id: str) -> bool:
+        """Delete a failed activity record to allow retry.
+
+        Returns True if a record was deleted.
+        """
+        with self._connect() as conn:
+            cursor = conn.execute(
+                "DELETE FROM activities WHERE garmin_activity_id = ? AND status = ?",
+                (garmin_activity_id, ActivityStatus.FAILED.value),
+            )
+            conn.commit()
+            return cursor.rowcount > 0
 
     def insert_activity(self, activity: Activity) -> Activity:
         """Insert a new activity record."""
@@ -179,7 +196,8 @@ class Database:
         with self._connect() as conn:
             conn.execute(
                 """
-                INSERT INTO strava_tokens (id, access_token, refresh_token, expires_at, athlete_id, updated_at)
+                INSERT INTO strava_tokens
+                    (id, access_token, refresh_token, expires_at, athlete_id, updated_at)
                 VALUES (1, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     access_token = excluded.access_token,
@@ -269,7 +287,8 @@ class Database:
             value = json.dumps(value)
         with self._connect() as conn:
             conn.execute(
-                "INSERT INTO config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = ?",
+                "INSERT INTO config (key, value) VALUES (?, ?)"
+                " ON CONFLICT(key) DO UPDATE SET value = ?",
                 (key, value, value),
             )
             conn.commit()

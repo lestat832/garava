@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 import sys
 import time
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 import click
 
@@ -15,16 +17,35 @@ from garava.models import ActivityStatus
 from garava.strava.auth import run_oauth_flow
 from garava.strava.client import StravaClient
 from garava.sync.core import SyncEngine
-from garava.sync.filters import ActivityFilter
 
 
-def setup_logging(level: str) -> None:
-    """Configure logging."""
-    logging.basicConfig(
-        level=getattr(logging, level.upper()),
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+def setup_logging(level: str, log_dir: Path | None = None) -> None:
+    """Configure logging to stdout and optionally to a rotating file."""
+    log_level = getattr(logging, level.upper())
+    fmt = logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
+
+    root = logging.getLogger()
+    root.setLevel(log_level)
+
+    # Console handler
+    console = logging.StreamHandler()
+    console.setLevel(log_level)
+    console.setFormatter(fmt)
+    root.addHandler(console)
+
+    # File handler (5 MB, 3 rotations)
+    if log_dir is None:
+        log_dir = Path("logs")
+    log_dir.mkdir(parents=True, exist_ok=True)
+    file_handler = RotatingFileHandler(
+        log_dir / "garava.log", maxBytes=5 * 1024 * 1024, backupCount=3,
+    )
+    file_handler.setLevel(log_level)
+    file_handler.setFormatter(fmt)
+    root.addHandler(file_handler)
 
 
 @click.group()
@@ -94,7 +115,8 @@ def setup(ctx: click.Context) -> None:
 
         if result.success and result.token:
             db.save_strava_token(result.token)
-            click.echo(f"Strava: Authentication successful! (athlete_id: {result.token.athlete_id})")
+            athlete = result.token.athlete_id
+            click.echo(f"Strava: Authentication successful! (athlete_id: {athlete})")
         else:
             click.echo(f"Strava authentication failed: {result.error}", err=True)
             sys.exit(1)

@@ -99,7 +99,7 @@ def run_oauth_flow(
 
     # Open browser for authorization
     auth_url = strava_client.get_authorization_url(redirect_uri)
-    logger.info(f"Opening browser for Strava authorization...")
+    logger.info("Opening browser for Strava authorization...")
     print(f"\nIf browser doesn't open, visit:\n{auth_url}\n")
     webbrowser.open(auth_url)
 

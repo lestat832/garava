@@ -6,12 +6,14 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 
+from garth.exc import GarthException
+
 from garava.database import Database
 from garava.garmin.activities import FitExtractionError, download_fit_file
 from garava.garmin.client import GarminClient
 from garava.models import Activity, ActivityStatus, GarminActivity
 from garava.strava.client import StravaClient
-from garava.strava.upload import UploadResult, upload_fit_file
+from garava.strava.upload import upload_fit_file
 from garava.sync.filters import ActivityFilter
 
 logger = logging.getLogger(__name__)
@@ -50,7 +52,7 @@ def process_activity(
     activity_id = garmin_activity.activity_id
     activity_type = garmin_activity.activity_type
 
-    # Check if already processed (idempotency)
+    # Check if already successfully processed (idempotency)
     if db.activity_exists(activity_id):
         logger.debug(f"Activity {activity_id} already processed, skipping")
         existing = db.get_activity(activity_id)
@@ -59,6 +61,10 @@ def process_activity(
             success=True,
             action="exists",
         )
+
+    # Clean up any previous failed record so we can retry
+    if db.delete_failed_activity(activity_id):
+        logger.info(f"Retrying previously failed activity {activity_id}")
 
     # Check filter
     if not activity_filter.should_sync(activity_type):
@@ -81,6 +87,8 @@ def process_activity(
     except FitExtractionError as e:
         activity = _record_failed(db, garmin_activity, str(e))
         return ProcessResult(activity=activity, success=False, action="failed")
+    except GarthException:
+        raise  # Let auth/API errors propagate for retry at the engine level
     except Exception as e:
         activity = _record_failed(db, garmin_activity, f"Download failed: {e}")
         return ProcessResult(activity=activity, success=False, action="failed")
