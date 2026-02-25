@@ -40,11 +40,14 @@ htmlcov/
 
 # Project specific
 *.db
-*.md
 .env
 .garth/
 .serena/
 .mcp.json
+
+# Internal docs (not for repo)
+CLAUDE.md
+PRODUCT_OVERVIEW.md
 
 # Logs
 logs/

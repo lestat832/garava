@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lestat832.github.io/garava/sitemap.xml
