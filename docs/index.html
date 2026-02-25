@@ -4,20 +4,20 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Garava — Selective Garmin-to-Strava Activity Sync</title>
-  <meta name="description" content="Choose which Garmin activities sync to Strava. Block duplicates from cycling computers, skip gym sessions and indoor rides. Open-source Python CLI.">
+  <meta name="description" content="Sync Garmin activities to Strava selectively. Block activity types you don't want (gym, indoor rides, etc.) and avoid duplicates if you also use a cycling computer. Open-source Python CLI.">
   <meta name="keywords" content="garmin, strava, sync, selective, activity, filter, FIT, cycling, running, python, cli, duplicate">
   <link rel="canonical" href="https://lestat832.github.io/garava/">
 
   <!-- Open Graph -->
   <meta property="og:title" content="Garava — Selective Garmin-to-Strava Activity Sync">
-  <meta property="og:description" content="Choose which Garmin activities sync to Strava. Block duplicates from cycling computers, skip gym sessions and indoor rides.">
+  <meta property="og:description" content="Sync Garmin activities to Strava selectively. Block activity types you don't want and avoid duplicates if you use a cycling computer too.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://lestat832.github.io/garava/">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Garava — Selective Garmin-to-Strava Activity Sync">
-  <meta name="twitter:description" content="Choose which Garmin activities sync to Strava. Block duplicates and unwanted activities. Open-source Python CLI.">
+  <meta name="twitter:description" content="Sync Garmin activities to Strava selectively. Block activity types you don't want. Open-source Python CLI.">
 
   <!-- Structured Data -->
   <script type="application/ld+json">
@@ -344,7 +344,7 @@
       <h1><span>Garava</span></h1>
       <p class="tagline">Selective Garmin-to-Strava Activity Sync</p>
       <p class="description">
-        Choose which Garmin activities make it to Strava. Block duplicates from your cycling computer, skip gym sessions and keep your Strava feed clean.
+        Pick which Garmin activities get synced to Strava and block the ones you don't want. Useful if you record with a cycling computer alongside a Garmin watch.
       </p>
       <div class="hero-cta">
         <a href="https://github.com/lestat832/garava" class="btn btn-primary">View on GitHub</a>
@@ -358,26 +358,27 @@
     <div class="container">
       <div class="problem-grid">
         <div class="problem-text">
-          <h2 class="section-title">The problem with Garmin's native sync</h2>
+          <h2 class="section-title">Garmin's sync doesn't let you choose</h2>
           <p>
-            Garmin Connect pushes <strong>everything</strong> to Strava. Every gym session, every indoor ride, every sauna visit. There's no way to filter.
+            Garmin Connect pushes <strong>everything</strong> to Strava. Gym sessions, indoor rides, sauna, breathwork — all of it. There's no filter.
           </p>
           <p>
-            If you use a cycling computer alongside your Garmin watch, you get duplicate rides on Strava — one from each device.
+            And if you record rides with a cycling computer too, you get duplicates on Strava — one from the watch, one from the computer.
           </p>
           <p>
-            Garava replaces that native sync with one you control. Set a blocklist, and only the activities you want make it through.
+            Garava replaces that native sync. You tell it which activity types to skip (e.g. strength training, indoor cycling) and it only uploads the rest.
           </p>
         </div>
         <div class="problem-visual">
+          <div style="color: var(--text-muted); margin-bottom: 8px; font-size: 0.8rem;">example blocklist: gym + indoor rides</div>
           <div><span class="line-pass">Running &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&rarr; Strava</span></div>
           <div><span class="line-block">Strength Training &nbsp;&nbsp;&nbsp;&rarr; Blocked</span></div>
           <div><span class="line-pass">Outdoor Cycling &nbsp;&nbsp;&nbsp;&nbsp;&rarr; Strava</span></div>
           <div><span class="line-block">Indoor Cycling &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&rarr; Blocked</span></div>
           <div><span class="line-pass">Trail Run &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&rarr; Strava</span></div>
-          <div><span class="line-block">Yoga &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&rarr; Blocked</span></div>
+          <div><span class="line-pass">Yoga &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&rarr; Strava</span></div>
           <div><span class="line-pass">Open Water Swim &nbsp;&nbsp;&nbsp;&nbsp;&rarr; Strava</span></div>
-          <div><span class="line-block">Breathwork &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&rarr; Blocked</span></div>
+          <div><span class="line-block">Virtual Ride &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&rarr; Blocked</span></div>
         </div>
       </div>
     </div>
@@ -387,22 +388,22 @@
   <section class="pipeline">
     <div class="container">
       <h2 class="section-title">How it works</h2>
-      <p class="section-subtitle">Three steps, fully automated. Runs in the background on your machine or a server.</p>
+      <p class="section-subtitle">Runs in the background on your Mac, Linux box or a server. Your machine needs to be awake for sync to happen — if it's asleep, it picks up when it wakes.</p>
       <div class="pipeline-steps">
         <div class="step">
           <div class="step-number">1</div>
           <h3>Fetch</h3>
-          <p>Pulls your latest activities from Garmin Connect using the official API. Checks for new ones every 10 minutes.</p>
+          <p>Pulls your latest activities from Garmin Connect. Checks for new ones every 10 minutes by default.</p>
         </div>
         <div class="step">
           <div class="step-number">2</div>
           <h3>Filter</h3>
-          <p>Compares each activity against your blocklist. Strength training, indoor cycling, yoga — whatever you don't want on Strava gets skipped.</p>
+          <p>Checks each activity against your blocklist. You decide what to block — strength training, indoor cycling, whatever doesn't belong on Strava for you.</p>
         </div>
         <div class="step">
           <div class="step-number">3</div>
           <h3>Sync</h3>
-          <p>Downloads the original FIT file and uploads it directly to Strava. Full sensor data preserved, no information lost.</p>
+          <p>Downloads the original FIT file and uploads it to Strava. Heart rate, power, GPS — everything comes through.</p>
         </div>
       </div>
     </div>
@@ -411,32 +412,32 @@
   <!-- Features -->
   <section class="features">
     <div class="container">
-      <h2 class="section-title">Built for reliability</h2>
-      <p class="section-subtitle">Set it up once and forget about it. Garava handles the edge cases so you don't have to.</p>
+      <h2 class="section-title">What else it does</h2>
+      <p class="section-subtitle">Beyond the filtering, there's some stuff under the hood that makes it work without babysitting.</p>
       <div class="features-grid">
         <div class="feature-card">
-          <h3>Selective Sync</h3>
-          <p>Configure exactly which activity types to block. One environment variable, comma-separated list.</p>
+          <h3>You Pick the Blocklist</h3>
+          <p>One environment variable, comma-separated list of activity types. Block as many or as few as you want.</p>
         </div>
         <div class="feature-card">
-          <h3>FIT Preservation</h3>
-          <p>Uploads original Garmin FIT files to Strava. Heart rate, power, GPS — all sensor data stays intact.</p>
+          <h3>Original FIT Files</h3>
+          <p>Uploads the actual FIT file from Garmin, not a summary. Heart rate, power, GPS — it all comes through.</p>
         </div>
         <div class="feature-card">
-          <h3>Idempotent</h3>
-          <p>SQLite database tracks every processed activity. Run it as many times as you want — nothing gets duplicated.</p>
+          <h3>No Duplicates</h3>
+          <p>Tracks every activity in a local database. If it already synced something, it won't sync it again.</p>
         </div>
         <div class="feature-card">
-          <h3>Auto Recovery</h3>
-          <p>Handles expired tokens, failed uploads and auth errors automatically. Retries failed activities on the next cycle.</p>
+          <h3>Handles Its Own Errors</h3>
+          <p>If a token expires or an upload fails, it sorts itself out. Failed activities get retried next cycle.</p>
         </div>
         <div class="feature-card">
-          <h3>Flexible Scheduling</h3>
-          <p>Run once on demand or poll continuously. Works with launchd, systemd, cron or Docker for always-on operation.</p>
+          <h3>Run However You Want</h3>
+          <p>One-off sync or continuous polling. Works with launchd, systemd, cron or Docker.</p>
         </div>
         <div class="feature-card">
-          <h3>Docker Ready</h3>
-          <p>Includes Dockerfile and docker-compose config. Persistent volume for state, env vars for credentials.</p>
+          <h3>Docker If You Want It</h3>
+          <p>Dockerfile and docker-compose included if you want to run it on a home server or VPS.</p>
         </div>
       </div>
     </div>
@@ -445,8 +446,8 @@
   <!-- Install -->
   <section class="install" id="install">
     <div class="container">
-      <h2 class="section-title">Get started in 4 commands</h2>
-      <p class="section-subtitle">Requires Python 3.9+ and a Strava API application.</p>
+      <h2 class="section-title">Get started</h2>
+      <p class="section-subtitle">You'll need Python 3.9+, a <a href="https://www.strava.com/settings/api">Strava API application</a> and your Garmin credentials. You also need to <strong style="color: var(--text);">disable Garmin's native Strava sync</strong> first — otherwise both will push activities and you'll get duplicates.</p>
       <div class="terminal">
         <div class="terminal-header">
           <div class="terminal-dot"></div>

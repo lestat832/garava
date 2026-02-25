@@ -1,12 +1,12 @@
 # Garava
 
-**Selective Garmin-to-Strava activity sync.** Choose exactly which Garmin activities make it to Strava — block the rest.
+**Selective Garmin-to-Strava activity sync.** Pick which activities get synced, block the ones you don't want.
 
-## The Problem
+## Why this exists
 
-If you wear a Garmin watch and also use a cycling computer (or any other device that uploads to Strava directly), you end up with duplicates. Garmin Connect's native sync pushes *everything* to Strava — every gym session, indoor ride, sauna visit and breathwork exercise. There's no built-in way to filter.
+If you wear a Garmin watch and also record with a cycling computer (or any other device that uploads to Strava on its own), you get duplicate rides on Strava. And even without a second device, Garmin's native sync pushes *everything* — gym sessions, indoor rides, sauna, breathwork. There's no way to tell it "sync my runs but skip the rest."
 
-Garava sits between Garmin Connect and Strava. It downloads your activities, checks them against a blocklist you configure and only uploads the ones you actually want. The rest stay on Garmin where they belong.
+Garava replaces Garmin's native Strava sync. You give it a blocklist of activity types to ignore and it handles the rest — pulls activities from Garmin, skips the ones you don't want and uploads the FIT files for everything else.
 
 ## How It Works
 
@@ -27,26 +27,32 @@ Garmin Connect
     Strava
 ```
 
-Garava downloads the original FIT files from Garmin and uploads them directly to Strava — no data loss, full sensor data preserved. A local SQLite database tracks every processed activity so nothing gets duplicated or missed.
+It downloads the original FIT files from Garmin and uploads them to Strava, so you keep all your sensor data (heart rate, power, GPS, etc.). A SQLite database tracks what's been processed so nothing gets duplicated or missed.
 
 ## Features
 
-- **Selective sync** — configurable blocklist for activity types (strength training, indoor cycling, yoga, etc.)
-- **FIT file preservation** — uploads original Garmin FIT files to Strava with full sensor data intact
-- **Idempotent** — tracks every activity by Garmin ID, never processes the same one twice
-- **Auto token refresh** — handles expired Strava OAuth tokens transparently
-- **Flexible scheduling** — run once on demand or poll continuously at a configurable interval
-- **Failed activity retry** — automatically retries previously failed uploads on the next cycle
-- **Auth recovery** — re-authenticates mid-cycle if Garmin session expires
-- **Docker ready** — includes Dockerfile and docker-compose for always-on deployment
+- **Selective sync** — block any Garmin activity type you don't want on Strava (e.g. strength training, indoor cycling)
+- **FIT file upload** — sends the original Garmin FIT files to Strava so all sensor data comes through
+- **No duplicates** — tracks every activity by Garmin ID, won't process the same one twice
+- **Token refresh** — refreshes expired Strava OAuth tokens on its own
+- **Flexible scheduling** — run once on demand or poll continuously on an interval
+- **Retries** — if an upload fails, it tries again next cycle
+- **Auth recovery** — if Garmin auth expires mid-cycle, it re-authenticates and keeps going
+- **Docker support** — includes Dockerfile and docker-compose for running on a server
+
+## Important: Before You Start
+
+**Disable Garmin's native Strava sync.** Since Garava replaces it, you need to disconnect the built-in integration. In Garmin Connect, go to Settings > Third-Party Apps > Strava and remove the connection. If you leave it on, both Garava and Garmin will push activities to Strava and you'll get duplicates.
+
+**Your machine needs to be on.** Garava runs as a background process on your computer (or a server). If your laptop is asleep or shut down, syncing pauses until it wakes up. Nothing gets lost — it picks up where it left off.
 
 ## Quick Start
 
 ### Prerequisites
 
 - Python 3.9+
-- A [Strava API application](https://www.strava.com/settings/api) (you'll need the Client ID and Client Secret)
-- Garmin Connect account credentials
+- A [Strava API application](https://www.strava.com/settings/api) (you need the Client ID and Client Secret)
+- Garmin Connect account
 
 ### Install
 
@@ -103,13 +109,15 @@ garava run
 
 ### Blocked Activity Types
 
-Set `GARAVA_BLOCKED_TYPES` to a comma-separated list of Garmin activity type keys:
+By default, only `strength_training` is blocked. You pick what to block based on what you don't want on Strava.
+
+Set `GARAVA_BLOCKED_TYPES` to a comma-separated list of Garmin activity type keys. For example, if you wanted to block gym sessions and indoor rides:
 
 ```
-GARAVA_BLOCKED_TYPES=strength_training,indoor_cycling,breathwork,yoga
+GARAVA_BLOCKED_TYPES=strength_training,indoor_cycling
 ```
 
-Common types you might want to block:
+Here are the type keys Garmin uses, so you know what to put in your blocklist:
 
 | Type Key | Activity |
 |----------|----------|
