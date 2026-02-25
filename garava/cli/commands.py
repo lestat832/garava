@@ -7,6 +7,7 @@ import os
 import stat
 import sys
 import time
+from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -161,18 +162,21 @@ def run(ctx: click.Context, once: bool) -> None:
         result = engine.run_cycle()
         _print_cycle_result(result.run)
     else:
-        # Continuous mode with scheduler
-        click.echo(f"Starting sync service (poll interval: {config.poll_interval_minutes} minutes)")
+        # Continuous mode — sync at :00, :15, :30, :45
+        click.echo("Starting sync service (schedule: :00, :15, :30, :45)")
         click.echo("Press Ctrl+C to stop")
 
         try:
+            result = engine.run_cycle()
+            _print_cycle_result(result.run)
+
             while True:
+                sleep_seconds, next_time = _seconds_until_next_quarter_hour()
+                logger.info(f"Next sync at {next_time.strftime('%H:%M')}")
+                time.sleep(sleep_seconds)
+
                 result = engine.run_cycle()
                 _print_cycle_result(result.run)
-
-                # Sleep until next cycle
-                logger.info(f"Sleeping for {config.poll_interval_minutes} minutes...")
-                time.sleep(config.poll_interval_minutes * 60)
 
         except KeyboardInterrupt:
             click.echo("\nShutting down...")
@@ -190,7 +194,7 @@ def status(ctx: click.Context) -> None:
     # Config
     click.echo(f"Database: {config.db_path}")
     click.echo(f"Blocked types: {', '.join(config.blocked_activity_types)}")
-    click.echo(f"Poll interval: {config.poll_interval_minutes} minutes")
+    click.echo("Schedule: quarter-hour (:00, :15, :30, :45)")
 
     # Stats
     stats = db.get_stats()
@@ -261,6 +265,19 @@ def history(ctx: click.Context, limit: int) -> None:
             click.echo(f"    Error: {activity.error_message}")
         elif activity.strava_activity_id:
             click.echo(f"    Strava ID: {activity.strava_activity_id}")
+
+
+def _seconds_until_next_quarter_hour(now: datetime | None = None) -> tuple[float, datetime]:
+    """Calculate seconds until the next :00, :15, :30, or :45 mark."""
+    if now is None:
+        now = datetime.now()
+    next_quarter = (now.minute // 15 + 1) * 15
+    if next_quarter >= 60:
+        next_time = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+    else:
+        next_time = now.replace(minute=next_quarter, second=0, microsecond=0)
+    seconds = max((next_time - now).total_seconds(), 1.0)
+    return seconds, next_time
 
 
 def _print_cycle_result(run) -> None:

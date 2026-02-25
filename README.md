@@ -103,7 +103,7 @@ This walks you through logging into Garmin Connect and authorizing Strava access
 # Single sync cycle
 garava run --once
 
-# Continuous polling (default: every 10 minutes)
+# Continuous sync (runs at :00, :15, :30, :45)
 garava run
 ```
 
@@ -116,7 +116,7 @@ garava run
 | `STRAVA_CLIENT_ID` | — | Strava API application client ID |
 | `STRAVA_CLIENT_SECRET` | — | Strava API application client secret |
 | `GARAVA_BLOCKED_TYPES` | `strength_training` | Comma-separated activity types to skip |
-| `GARAVA_POLL_INTERVAL` | `10` | Minutes between sync cycles |
+| `GARAVA_POLL_INTERVAL` | — | Deprecated. Sync runs at quarter-hour marks (:00, :15, :30, :45) |
 | `GARAVA_FETCH_LIMIT` | `20` | Max activities to fetch per cycle |
 | `GARAVA_DB_PATH` | `./garava.db` | Path to SQLite database |
 | `GARTH_HOME` | `~/.garth` | Path to Garmin session tokens |
