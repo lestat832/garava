@@ -35,7 +35,8 @@ def get_recent_activities(client: GarminClient, limit: int = 20) -> list[GarminA
             activity = GarminActivity.from_api_response(raw)
             activities.append(activity)
         except (KeyError, TypeError) as e:
-            logger.warning(f"Failed to parse activity: {e}, raw data: {raw}")
+            keys = list(raw.keys()) if isinstance(raw, dict) else type(raw).__name__
+            logger.warning(f"Failed to parse activity: {e}, keys: {keys}")
             continue
 
     return activities

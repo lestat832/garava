@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import html
 import http.server
 import logging
+import secrets
 import threading
 import time
 import urllib.parse
@@ -33,11 +35,26 @@ class OAuthCallbackHandler(http.server.BaseHTTPRequestHandler):
 
     authorization_code: str | None = None
     error: str | None = None
+    expected_state: str | None = None
 
     def do_GET(self) -> None:
         """Handle GET request (OAuth callback)."""
         parsed = urllib.parse.urlparse(self.path)
         params = urllib.parse.parse_qs(parsed.query)
+
+        # Verify CSRF state parameter
+        received_state = params.get("state", [None])[0]
+        expected = OAuthCallbackHandler.expected_state
+        if expected and received_state != expected:
+            OAuthCallbackHandler.error = "State mismatch — possible CSRF attack"
+            self.send_response(403)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(
+                b"<html><body><h1>Authorization failed</h1>"
+                b"<p>State verification failed.</p></body></html>"
+            )
+            return
 
         if "code" in params:
             OAuthCallbackHandler.authorization_code = params["code"][0]
@@ -55,7 +72,7 @@ class OAuthCallbackHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(
                 f"<html><body><h1>Authorization failed</h1>"
-                f"<p>{OAuthCallbackHandler.error}</p></body></html>".encode()
+                f"<p>{html.escape(OAuthCallbackHandler.error)}</p></body></html>".encode()
             )
         else:
             self.send_response(400)
@@ -86,6 +103,8 @@ def run_oauth_flow(
     # Reset handler state
     OAuthCallbackHandler.authorization_code = None
     OAuthCallbackHandler.error = None
+    oauth_state = secrets.token_urlsafe(32)
+    OAuthCallbackHandler.expected_state = oauth_state
 
     # Parse redirect URI to get port
     parsed = urllib.parse.urlparse(redirect_uri)
@@ -98,7 +117,7 @@ def run_oauth_flow(
     server_thread.start()
 
     # Open browser for authorization
-    auth_url = strava_client.get_authorization_url(redirect_uri)
+    auth_url = strava_client.get_authorization_url(redirect_uri, state=oauth_state)
     logger.info("Opening browser for Strava authorization...")
     print(f"\nIf browser doesn't open, visit:\n{auth_url}\n")
     webbrowser.open(auth_url)

@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sqlite3
+import stat
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
@@ -66,12 +68,20 @@ class Database:
     def __init__(self, db_path: Path) -> None:
         self.db_path = db_path
         self._ensure_schema()
+        self._set_file_permissions()
 
     def _ensure_schema(self) -> None:
         """Create tables if they don't exist."""
         with self._connect() as conn:
             conn.executescript(SCHEMA)
             conn.commit()
+
+    def _set_file_permissions(self) -> None:
+        """Set restrictive permissions on the database file (owner read/write only)."""
+        try:
+            os.chmod(self.db_path, stat.S_IRUSR | stat.S_IWUSR)
+        except OSError:
+            logger.debug("Could not set file permissions on database")
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:

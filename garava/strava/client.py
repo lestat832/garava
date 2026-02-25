@@ -28,11 +28,12 @@ class StravaClient:
         """Get the underlying stravalib Client."""
         return self._client
 
-    def get_authorization_url(self, redirect_uri: str) -> str:
+    def get_authorization_url(self, redirect_uri: str, state: str | None = None) -> str:
         """Generate OAuth2 authorization URL.
 
         Args:
             redirect_uri: Callback URL for OAuth flow
+            state: CSRF protection state parameter
 
         Returns:
             URL to redirect user to for authorization
@@ -41,6 +42,7 @@ class StravaClient:
             client_id=self.client_id,
             redirect_uri=redirect_uri,
             scope=["activity:read_all", "activity:write"],
+            state=state,
         )
 
     def exchange_code(self, code: str) -> StravaToken:

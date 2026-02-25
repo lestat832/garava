@@ -4,20 +4,20 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Garava — Selective Garmin-to-Strava Activity Sync</title>
-  <meta name="description" content="Sync Garmin activities to Strava selectively. Block activity types you don't want (gym, indoor rides, etc.) and avoid duplicates if you also use a cycling computer. Open-source Python CLI.">
+  <meta name="description" content="Sync Garmin activities to Strava selectively. Use the right data source for each activity — block Garmin types you have a better source for (cycling computer, gym app, etc.). Open-source Python CLI.">
   <meta name="keywords" content="garmin, strava, sync, selective, activity, filter, FIT, cycling, running, python, cli, duplicate">
   <link rel="canonical" href="https://lestat832.github.io/garava/">
 
   <!-- Open Graph -->
   <meta property="og:title" content="Garava — Selective Garmin-to-Strava Activity Sync">
-  <meta property="og:description" content="Sync Garmin activities to Strava selectively. Block activity types you don't want and avoid duplicates if you use a cycling computer too.">
+  <meta property="og:description" content="Sync Garmin activities to Strava selectively. Use the right data source for each activity — block Garmin types you have a better source for.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://lestat832.github.io/garava/">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Garava — Selective Garmin-to-Strava Activity Sync">
-  <meta name="twitter:description" content="Sync Garmin activities to Strava selectively. Block activity types you don't want. Open-source Python CLI.">
+  <meta name="twitter:description" content="Sync Garmin activities to Strava selectively. Use the right data source for each activity. Open-source Python CLI.">
 
   <!-- Structured Data -->
   <script type="application/ld+json">
@@ -344,7 +344,7 @@
       <h1><span>Garava</span></h1>
       <p class="tagline">Selective Garmin-to-Strava Activity Sync</p>
       <p class="description">
-        Pick which Garmin activities get synced to Strava and block the ones you don't want. Useful if you record with a cycling computer alongside a Garmin watch.
+        Use the right data source for each activity on Strava. If you record with a cycling computer or gym app alongside a Garmin watch, Garava makes sure the better version is the one that lands on Strava.
       </p>
       <div class="hero-cta">
         <a href="https://github.com/lestat832/garava" class="btn btn-primary">View on GitHub</a>
@@ -353,32 +353,31 @@
     </div>
   </header>
 
-  <!-- Problem -->
+  <!-- Use Cases -->
   <section class="problem">
     <div class="container">
+      <h2 class="section-title">Sound familiar?</h2>
       <div class="problem-grid">
         <div class="problem-text">
-          <h2 class="section-title">Garmin's sync doesn't let you choose</h2>
           <p>
-            Garmin Connect pushes <strong>everything</strong> to Strava. Gym sessions, indoor rides, sauna, breathwork — all of it. There's no filter.
+            <strong>Garmin watch + Karoo.</strong> You wear a Garmin for training load and ride with a Karoo. Both record the ride. The Karoo has your power meter and richer cycling data -- that's what you want on Strava. But Garmin pushes its version too and you get a duplicate (or Strava picks the wrong one).
           </p>
           <p>
-            And if you record rides with a cycling computer too, you get duplicates on Strava — one from the watch, one from the computer.
+            <strong>Garmin watch + Hevy.</strong> You wear a Garmin during gym sessions for training load but log sets and reps in Hevy. Hevy syncs detailed workout data to Strava. Garmin also syncs a generic "Strength Training" entry with nothing but heart rate. Two entries, one is useless.
           </p>
           <p>
-            Garava replaces that native sync. You tell it which activity types to skip (e.g. strength training, indoor cycling) and it only uploads the rest.
+            <strong>The fix is the same.</strong> Garava replaces Garmin's native Strava sync and blocks the activity types you have a better source for. Everything else still syncs automatically.
           </p>
         </div>
         <div class="problem-visual">
-          <div style="color: var(--text-muted); margin-bottom: 8px; font-size: 0.8rem;">example blocklist: gym + indoor rides</div>
-          <div><span class="line-pass">Running &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&rarr; Strava</span></div>
-          <div><span class="line-block">Strength Training &nbsp;&nbsp;&nbsp;&rarr; Blocked</span></div>
-          <div><span class="line-pass">Outdoor Cycling &nbsp;&nbsp;&nbsp;&nbsp;&rarr; Strava</span></div>
-          <div><span class="line-block">Indoor Cycling &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&rarr; Blocked</span></div>
+          <div style="color: var(--text-muted); margin-bottom: 12px; font-size: 0.8rem;">karoo cyclist + hevy gym user</div>
+          <div><span class="line-pass">Morning Run &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&rarr; Strava</span></div>
+          <div><span class="line-block">Road Cycling &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&rarr; Blocked</span> <span style="color: var(--text-muted); font-size: 0.8rem;">&nbsp;(Karoo has it)</span></div>
+          <div><span class="line-block">Strength Training &nbsp;&nbsp;&rarr; Blocked</span> <span style="color: var(--text-muted); font-size: 0.8rem;">&nbsp;(Hevy has it)</span></div>
           <div><span class="line-pass">Trail Run &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&rarr; Strava</span></div>
-          <div><span class="line-pass">Yoga &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&rarr; Strava</span></div>
           <div><span class="line-pass">Open Water Swim &nbsp;&nbsp;&nbsp;&nbsp;&rarr; Strava</span></div>
-          <div><span class="line-block">Virtual Ride &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&rarr; Blocked</span></div>
+          <div><span class="line-block">Indoor Cycling &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&rarr; Blocked</span> <span style="color: var(--text-muted); font-size: 0.8rem;">&nbsp;(Karoo has it)</span></div>
+          <div><span class="line-pass">Hiking &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&rarr; Strava</span></div>
         </div>
       </div>
     </div>
@@ -398,7 +397,7 @@
         <div class="step">
           <div class="step-number">2</div>
           <h3>Filter</h3>
-          <p>Checks each activity against your blocklist. You decide what to block — strength training, indoor cycling, whatever doesn't belong on Strava for you.</p>
+          <p>Checks each activity against your blocklist. Block activity types you have a better source for -- cycling (Karoo handles it), gym (Hevy handles it), whatever applies to your setup.</p>
         </div>
         <div class="step">
           <div class="step-number">3</div>
@@ -417,7 +416,7 @@
       <div class="features-grid">
         <div class="feature-card">
           <h3>You Pick the Blocklist</h3>
-          <p>One environment variable, comma-separated list of activity types. Block as many or as few as you want.</p>
+          <p>One environment variable, comma-separated list. Block cycling types if you ride with a Karoo, gym types if you log with Hevy, or whatever fits your setup.</p>
         </div>
         <div class="feature-card">
           <h3>Original FIT Files</h3>
@@ -447,7 +446,7 @@
   <section class="install" id="install">
     <div class="container">
       <h2 class="section-title">Get started</h2>
-      <p class="section-subtitle">You'll need Python 3.9+, a <a href="https://www.strava.com/settings/api">Strava API application</a> and your Garmin credentials. You also need to <strong style="color: var(--text);">disable Garmin's native Strava sync</strong> first — otherwise both will push activities and you'll get duplicates.</p>
+      <p class="section-subtitle">You'll need Python 3.9+, a <a href="https://www.strava.com/settings/api">Strava API application</a> and your Garmin credentials. You also need to <strong style="color: var(--text);">disable Garmin's native Strava sync</strong> first -- Garava replaces it entirely, so your runs, hikes and swims still get synced.</p>
       <div class="terminal">
         <div class="terminal-header">
           <div class="terminal-dot"></div>

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import os
+import stat
 import sys
 import time
 from logging.handlers import RotatingFileHandler
@@ -40,12 +42,21 @@ def setup_logging(level: str, log_dir: Path | None = None) -> None:
     if log_dir is None:
         log_dir = Path("logs")
     log_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        os.chmod(log_dir, stat.S_IRWXU)
+    except OSError:
+        pass
+    log_file = log_dir / "garava.log"
     file_handler = RotatingFileHandler(
-        log_dir / "garava.log", maxBytes=5 * 1024 * 1024, backupCount=3,
+        log_file, maxBytes=5 * 1024 * 1024, backupCount=3,
     )
     file_handler.setLevel(log_level)
     file_handler.setFormatter(fmt)
     root.addHandler(file_handler)
+    try:
+        os.chmod(log_file, stat.S_IRUSR | stat.S_IWUSR)
+    except OSError:
+        pass
 
 
 @click.group()

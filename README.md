@@ -1,12 +1,26 @@
 # Garava
 
-**Selective Garmin-to-Strava activity sync.** Pick which activities get synced, block the ones you don't want.
+**Selective Garmin-to-Strava activity sync.** Use the right data source for each activity on Strava -- block the ones your other devices already handle better.
 
 ## Why this exists
 
-If you wear a Garmin watch and also record with a cycling computer (or any other device that uploads to Strava on its own), you get duplicate rides on Strava. And even without a second device, Garmin's native sync pushes *everything* — gym sessions, indoor rides, sauna, breathwork. There's no way to tell it "sync my runs but skip the rest."
+Garmin Connect's native Strava sync pushes everything your watch records. No filter. That's fine if a Garmin watch is your only device -- but if you also record with a cycling computer, a gym app or anything else that syncs to Strava on its own, you end up with duplicates. And Garmin's version is usually the worse one.
 
-Garava replaces Garmin's native Strava sync. You give it a blocklist of activity types to ignore and it handles the rest — pulls activities from Garmin, skips the ones you don't want and uploads the FIT files for everything else.
+### Garmin watch + Hammerhead Karoo
+
+You wear a Garmin watch all day for training load and recovery data, and you ride with a Karoo. Both record the ride. The Karoo has your power meter, shifting data and full cycling metrics -- that's the version you want on Strava. But Garmin pushes the watch's version too, so you get a duplicate or Strava picks the wrong one.
+
+**Fix:** Garava blocks Garmin's cycling types so only the Karoo's upload reaches Strava. Your watch still tracks the ride for Garmin's training load -- it just doesn't push it to Strava.
+
+### Garmin watch + Hevy
+
+You wear a Garmin watch during gym sessions so it counts toward training load, but you log your actual workout in Hevy -- sets, reps, weight, rest times. Hevy syncs to Strava with all that detail. Garmin also syncs a generic "Strength Training" entry with nothing but heart rate and duration. Two entries for the same session and the Garmin one is useless.
+
+**Fix:** Garava blocks Garmin's strength training type so only Hevy's detailed log makes it to Strava.
+
+### The pattern
+
+Any time you have a better source for a specific activity type, Garava blocks the Garmin version and keeps the good one. Everything else (runs, swims, hikes) still syncs from Garmin automatically.
 
 ## How It Works
 
@@ -31,7 +45,7 @@ It downloads the original FIT files from Garmin and uploads them to Strava, so y
 
 ## Features
 
-- **Selective sync** — block any Garmin activity type you don't want on Strava (e.g. strength training, indoor cycling)
+- **Selective sync** — block Garmin activity types you have a better source for (cycling computer, gym app, etc.)
 - **FIT file upload** — sends the original Garmin FIT files to Strava so all sensor data comes through
 - **No duplicates** — tracks every activity by Garmin ID, won't process the same one twice
 - **Token refresh** — refreshes expired Strava OAuth tokens on its own
@@ -42,7 +56,7 @@ It downloads the original FIT files from Garmin and uploads them to Strava, so y
 
 ## Important: Before You Start
 
-**Disable Garmin's native Strava sync.** Since Garava replaces it, you need to disconnect the built-in integration. In Garmin Connect, go to Settings > Third-Party Apps > Strava and remove the connection. If you leave it on, both Garava and Garmin will push activities to Strava and you'll get duplicates.
+**Disable Garmin's native Strava sync.** Garava replaces it entirely -- your runs, hikes and swims still get synced through Garava instead of Garmin's direct connection. In Garmin Connect, go to Settings > Third-Party Apps > Strava and remove the connection. If you leave it on, both Garava and Garmin will push activities and you'll get duplicates.
 
 **Your machine needs to be on.** Garava runs as a background process on your computer (or a server). If your laptop is asleep or shut down, syncing pauses until it wakes up. Nothing gets lost — it picks up where it left off.
 
@@ -109,23 +123,42 @@ garava run
 
 ### Blocked Activity Types
 
-By default, only `strength_training` is blocked. You pick what to block based on what you don't want on Strava.
+By default, only `strength_training` is blocked. You configure the blocklist based on which activity types you have a better source for.
 
-Set `GARAVA_BLOCKED_TYPES` to a comma-separated list of Garmin activity type keys. For example, if you wanted to block gym sessions and indoor rides:
+Set `GARAVA_BLOCKED_TYPES` to a comma-separated list of Garmin activity type keys. Some common setups:
+
+**Karoo cyclist** -- block all cycling so the Karoo is the sole source on Strava:
 
 ```
-GARAVA_BLOCKED_TYPES=strength_training,indoor_cycling
+GARAVA_BLOCKED_TYPES=cycling,road_biking,mountain_biking,gravel_cycling,indoor_cycling,virtual_ride
+```
+
+**Hevy gym user** -- block strength training so Hevy's detailed logs are the sole source:
+
+```
+GARAVA_BLOCKED_TYPES=strength_training
+```
+
+**Both:**
+
+```
+GARAVA_BLOCKED_TYPES=cycling,road_biking,mountain_biking,gravel_cycling,indoor_cycling,virtual_ride,strength_training
 ```
 
 Here are the type keys Garmin uses, so you know what to put in your blocklist:
 
 | Type Key | Activity |
 |----------|----------|
-| `strength_training` | Weight lifting, gym workouts |
-| `indoor_cycling` | Stationary bike, trainer rides |
+| `cycling` | Cycling (general) |
+| `road_biking` | Road cycling |
+| `mountain_biking` | Mountain biking |
+| `gravel_cycling` | Gravel riding |
+| `virtual_ride` | Virtual / Zwift rides |
+| `indoor_cycling` | Stationary bike, trainer |
+| `strength_training` | Weight lifting, gym |
 | `indoor_cardio` | Treadmill, elliptical |
 | `breathwork` | Breathing exercises |
-| `yoga` | Yoga sessions |
+| `yoga` | Yoga |
 | `pilates` | Pilates |
 | `fitness_equipment` | General gym equipment |
 
