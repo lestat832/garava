@@ -16,7 +16,7 @@
   <meta property="og:image" content="https://lestat832.github.io/garava/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Garava — Selective Garmin-to-Strava Activity Sync">
+  <meta property="og:image:alt" content="Garava logo: mountain ridges with a winding trail in blue and orange">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
@@ -39,6 +39,55 @@
     "url": "https://lestat832.github.io/garava/",
     "codeRepository": "https://github.com/lestat832/garava",
     "programmingLanguage": "Python"
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do I stop Garmin from creating duplicate activities on Strava?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Disable Garmin's built-in Strava sync and use Garava instead. Garava selectively syncs activities from Garmin Connect to Strava, blocking activity types you record with a better source (like a Karoo cycling computer or Hevy gym app) while automatically syncing everything else."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I sync some Garmin activities to Strava but not others?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Garava lets you configure a blocklist of Garmin activity types to exclude from Strava sync. For example, you can block cycling activities if you use a Karoo, and block strength training if you use Hevy, while still syncing runs, hikes, swims and other activities automatically."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is Garava?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Garava is a free, open-source Python CLI that selectively syncs Garmin Connect activities to Strava. It replaces Garmin's native Strava sync with a configurable blocklist, uploads original FIT files to preserve all sensor data, and tracks every processed activity in a local SQLite database to prevent duplicates."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does Garava work with Karoo and Hevy?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Garava is designed for exactly this use case. If you wear a Garmin watch alongside a Karoo cycling computer or log gym sessions in Hevy, Garava blocks the Garmin versions of those activities so only the richer data from Karoo or Hevy appears on Strava."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I install Garava?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Clone the GitHub repository, install with pip (pip install -e .), configure your Strava API credentials in a .env file, then run 'garava setup' to authenticate with both Garmin and Strava. Requires Python 3.9 or later. You must disable Garmin's native Strava sync first."
+        }
+      }
+    ]
   }
   </script>
 
@@ -83,16 +132,18 @@
       font-size: 3.5rem;
       font-weight: 800;
       letter-spacing: -0.03em;
-      margin-bottom: 8px;
+      margin-bottom: 16px;
     }
 
     .hero h1 span { color: var(--accent); }
 
-    .hero .tagline {
+    .hero h1 .h1-subtitle {
+      display: block;
       font-size: 1.35rem;
       color: var(--text-muted);
-      margin-bottom: 16px;
       font-weight: 400;
+      letter-spacing: 0;
+      margin-top: 8px;
     }
 
     .hero .description {
@@ -346,10 +397,9 @@
   <!-- Hero -->
   <header class="hero">
     <div class="container">
-      <h1><span>Garava</span></h1>
-      <p class="tagline">Selective Garmin-to-Strava Activity Sync</p>
+      <h1><span>Garava</span> <span class="h1-subtitle">Selective Garmin-to-Strava Activity Sync</span></h1>
       <p class="description">
-        Use the right data source for each activity on Strava. If you record with a cycling computer or gym app alongside a Garmin watch, Garava makes sure the better version is the one that lands on Strava.
+        Garava is a free, open-source Python CLI that syncs Garmin Connect activities to Strava selectively. If you record with a cycling computer or gym app alongside a Garmin watch, Garava blocks the Garmin version so the better data source lands on Strava. Runs, hikes, swims and everything else sync automatically.
       </p>
       <div class="hero-cta">
         <a href="https://github.com/lestat832/garava" class="btn btn-primary">View on GitHub</a>
@@ -358,10 +408,13 @@
     </div>
   </header>
 
+  <main>
+
   <!-- Use Cases -->
   <section class="problem">
     <div class="container">
       <h2 class="section-title">Sound familiar?</h2>
+      <p class="section-subtitle">Garmin watches record every activity, but if you also use a Karoo cycling computer, Hevy for gym logging or another app that syncs to Strava, you end up with duplicates. Garava blocks the Garmin versions of activities you have a better source for.</p>
       <div class="problem-grid">
         <div class="problem-text">
           <p>
@@ -392,7 +445,7 @@
   <section class="pipeline">
     <div class="container">
       <h2 class="section-title">How it works</h2>
-      <p class="section-subtitle">Runs in the background on your Mac, Linux box or a server. Your machine needs to be awake for sync to happen — if it's asleep, it picks up when it wakes.</p>
+      <p class="section-subtitle">Garava runs in the background on macOS, Linux or a server, syncing on the quarter hour (:00, :15, :30, :45). It fetches activities from Garmin Connect, checks them against your blocklist, downloads original FIT files for allowed activities and uploads them to Strava. If your machine is asleep, it picks up when it wakes.</p>
       <div class="pipeline-steps">
         <div class="step">
           <div class="step-number">1</div>
@@ -417,7 +470,7 @@
   <section class="features">
     <div class="container">
       <h2 class="section-title">What else it does</h2>
-      <p class="section-subtitle">Beyond the filtering, there's some stuff under the hood that makes it work without babysitting.</p>
+      <p class="section-subtitle">Garava tracks every processed activity in a local SQLite database to prevent duplicates, automatically refreshes expired Garmin and Strava tokens, and supports deployment via launchd, systemd, cron or Docker.</p>
       <div class="features-grid">
         <div class="feature-card">
           <h3>You Pick the Blocklist</h3>
@@ -451,7 +504,7 @@
   <section class="install" id="install">
     <div class="container">
       <h2 class="section-title">Get started</h2>
-      <p class="section-subtitle">You'll need Python 3.9+, a <a href="https://www.strava.com/settings/api">Strava API application</a> and your Garmin credentials. You also need to <strong style="color: var(--text);">disable Garmin's native Strava sync</strong> first -- Garava replaces it entirely, so your runs, hikes and swims still get synced.</p>
+      <p class="section-subtitle">Garava requires Python 3.9+, a <a href="https://www.strava.com/settings/api">Strava API application</a> and your Garmin Connect credentials. Before installing, <strong style="color: var(--text);">disable Garmin's native Strava sync</strong> — Garava replaces it entirely, continuing to sync runs, hikes, swims and everything not on your blocklist.</p>
       <div class="terminal">
         <div class="terminal-header">
           <div class="terminal-dot"></div>
@@ -476,6 +529,8 @@
     </div>
   </section>
 
+  </main>
+
   <!-- Footer -->
   <footer>
     <div class="container">
@@ -484,6 +539,7 @@
         <a href="https://github.com/lestat832/garava/blob/main/LICENSE">MIT License</a>
         <a href="https://github.com/lestat832/garava/issues">Issues</a>
       </div>
+      <p style="margin-bottom: 8px; font-size: 0.8rem;">Last updated February 2026</p>
       <p>Built by <a href="https://github.com/lestat832">Marc Geraldez</a></p>
     </div>
   </footer>

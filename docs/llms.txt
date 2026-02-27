@@ -1,0 +1,41 @@
+# Garava
+
+> Garava is a free, open-source Python CLI that selectively syncs Garmin Connect activities to Strava.
+
+Garava replaces Garmin's built-in Strava sync with a configurable blocklist. If you wear a Garmin watch alongside a Karoo cycling computer or log gym sessions in Hevy, Garava blocks the Garmin versions of those activities so only the better data source appears on Strava. Everything else (runs, hikes, swims) syncs automatically.
+
+## Key Facts
+
+- License: MIT
+- Language: Python 3.9+
+- Platforms: macOS, Linux, Windows, Docker
+- Author: Marc Geraldez
+- Repository: https://github.com/lestat832/garava
+
+## How It Works
+
+1. Fetches activities from Garmin Connect on the quarter hour (:00, :15, :30, :45)
+2. Filters each activity against your configured blocklist
+3. Downloads the original FIT file for allowed activities
+4. Uploads the FIT file to Strava, preserving all sensor data (heart rate, power, GPS)
+5. Tracks every processed activity in SQLite to prevent duplicates
+
+## Use Cases
+
+- Garmin watch + Karoo cycling computer: Block cycling types so only Karoo data reaches Strava
+- Garmin watch + Hevy gym app: Block strength training so only Hevy's detailed workout data reaches Strava
+- Any Garmin + secondary device: Block whichever activity types you record with a better source
+
+## Install
+
+git clone https://github.com/lestat832/garava.git && cd garava
+pip install -e .
+cp .env.example .env  # Add Strava API credentials
+garava setup           # Authenticate with Garmin + Strava
+garava run --once      # One-time sync
+
+## Links
+
+- Homepage: https://lestat832.github.io/garava/
+- GitHub: https://github.com/lestat832/garava
+- Issues: https://github.com/lestat832/garava/issues
