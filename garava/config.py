@@ -32,6 +32,9 @@ class Config:
     # Logging
     log_level: str = field(default_factory=lambda: os.getenv("GARAVA_LOG_LEVEL", "INFO"))
 
+    # Gear assignment
+    gear_rules: str = field(default_factory=lambda: os.getenv("GARAVA_GEAR_RULES", ""))
+
     def __post_init__(self) -> None:
         """Parse blocked types from env if not already set."""
         if not self.blocked_activity_types:

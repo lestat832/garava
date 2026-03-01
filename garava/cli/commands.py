@@ -19,7 +19,7 @@ from garava.garmin.client import GarminAuthError, GarminClient
 from garava.models import ActivityStatus
 from garava.strava.auth import run_oauth_flow
 from garava.strava.client import StravaClient
-from garava.sync.core import SyncEngine
+from garava.sync.core import SyncCycleResult, SyncEngine
 
 
 def setup_logging(level: str, log_dir: Path | None = None) -> None:
@@ -160,7 +160,7 @@ def run(ctx: click.Context, once: bool) -> None:
         # Single run mode
         click.echo("Running single sync cycle...")
         result = engine.run_cycle()
-        _print_cycle_result(result.run)
+        _print_cycle_result(result)
     else:
         # Continuous mode — sync at :00, :15, :30, :45
         click.echo("Starting sync service (schedule: :00, :15, :30, :45)")
@@ -168,7 +168,7 @@ def run(ctx: click.Context, once: bool) -> None:
 
         try:
             result = engine.run_cycle()
-            _print_cycle_result(result.run)
+            _print_cycle_result(result)
 
             while True:
                 sleep_seconds, next_time = _seconds_until_next_quarter_hour()
@@ -176,7 +176,7 @@ def run(ctx: click.Context, once: bool) -> None:
                 time.sleep(sleep_seconds)
 
                 result = engine.run_cycle()
-                _print_cycle_result(result.run)
+                _print_cycle_result(result)
 
         except KeyboardInterrupt:
             click.echo("\nShutting down...")
@@ -280,8 +280,9 @@ def _seconds_until_next_quarter_hour(now: datetime | None = None) -> tuple[float
     return seconds, next_time
 
 
-def _print_cycle_result(run) -> None:
+def _print_cycle_result(result: SyncCycleResult) -> None:
     """Print summary of a sync cycle."""
+    run = result.run
     click.echo(
         f"Cycle complete: "
         f"checked={run.activities_checked}, "
@@ -289,6 +290,8 @@ def _print_cycle_result(run) -> None:
         f"skipped={run.activities_skipped}, "
         f"failed={run.activities_failed}"
     )
+    if result.gear_result and result.gear_result.updated > 0:
+        click.echo(f"Gear updated: {result.gear_result.updated} activities")
     if run.error:
         click.echo(f"Error: {run.error}", err=True)
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 from garth.exc import GarthException
 
@@ -15,6 +15,11 @@ from garava.garmin.client import GarminAuthError, GarminClient
 from garava.models import SyncRun
 from garava.strava.auth import ensure_valid_token
 from garava.strava.client import StravaClient
+from garava.strava.gear import (
+    GearAssignmentResult,
+    apply_gear_rules,
+    parse_gear_rules,
+)
 from garava.sync.filters import ActivityFilter
 from garava.sync.processor import ProcessResult, process_activity
 
@@ -35,6 +40,7 @@ class SyncCycleResult:
 
     run: SyncRun
     results: list[ProcessResult]
+    gear_result: GearAssignmentResult | None = None
 
     @property
     def synced_count(self) -> int:
@@ -70,6 +76,7 @@ class SyncEngine:
         self.strava = strava_client
         self.filter = activity_filter
         self._initial_sync_time: str | None = None
+        self._gear_rules = parse_gear_rules(config.gear_rules)
 
     def _ensure_initial_sync_time(self) -> str:
         """Get or set the initial sync timestamp."""
@@ -144,6 +151,39 @@ class SyncEngine:
             logger.error(f"Re-auth/retry failed for {garmin_activity.activity_id}: {e}")
             return None
 
+    def _apply_gear_rules(self) -> GearAssignmentResult | None:
+        """Apply gear assignment rules to recent Strava activities (non-fatal)."""
+        if not self._gear_rules:
+            return None
+
+        try:
+            last_check = self.db.get_config("last_gear_check_time")
+            after = datetime.fromisoformat(last_check) if last_check else None
+
+            result = apply_gear_rules(
+                strava_client=self.strava,
+                rules=self._gear_rules,
+                after=after,
+            )
+
+            self.db.set_config(
+                "last_gear_check_time",
+                datetime.now(timezone.utc).isoformat(),
+            )
+
+            if result.updated > 0 or result.errors > 0:
+                logger.info(
+                    f"Gear assignment: updated={result.updated}, "
+                    f"errors={result.errors}, "
+                    f"already_correct={result.already_correct}"
+                )
+
+            return result
+
+        except Exception as e:
+            logger.warning(f"Gear assignment failed: {e}")
+            return None
+
     def run_cycle(self) -> SyncCycleResult:
         """Execute one complete sync cycle.
 
@@ -152,6 +192,7 @@ class SyncEngine:
         """
         run = self.db.create_sync_run()
         results: list[ProcessResult] = []
+        gear_result: GearAssignmentResult | None = None
 
         try:
             # Step 1: Ensure authentication
@@ -190,6 +231,9 @@ class SyncEngine:
                 elif result.action == "duplicate":
                     run.activities_synced += 1  # Count as success
 
+            # Step 5: Apply gear rules (non-fatal)
+            gear_result = self._apply_gear_rules()
+
             # Complete the run
             run.complete()
             self.db.update_sync_run(run)
@@ -215,7 +259,7 @@ class SyncEngine:
             self.db.update_sync_run(run)
             logger.exception(f"Unexpected error during sync: {e}")
 
-        return SyncCycleResult(run=run, results=results)
+        return SyncCycleResult(run=run, results=results, gear_result=gear_result)
 
     @classmethod
     def create(cls, config: Config) -> SyncEngine:
