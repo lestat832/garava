@@ -7,6 +7,8 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
+MAX_RETRIES = 3
+
 
 @dataclass
 class Config:

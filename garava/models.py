@@ -30,6 +30,7 @@ class Activity:
     error_message: str | None = None
     processed_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
     id: int | None = None
+    retry_count: int = 0
 
     @classmethod
     def from_row(cls, row: tuple) -> Activity:
@@ -45,6 +46,7 @@ class Activity:
             skip_reason=row[7],
             error_message=row[8],
             processed_at=row[9],
+            retry_count=row[10] if len(row) > 10 else 0,
         )
 
 

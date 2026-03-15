@@ -75,6 +75,16 @@ class Database:
         with self._connect() as conn:
             conn.executescript(SCHEMA)
             conn.commit()
+        self._migrate()
+
+    def _migrate(self) -> None:
+        """Run schema migrations for new columns."""
+        with self._connect() as conn:
+            try:
+                conn.execute("ALTER TABLE activities ADD COLUMN retry_count INTEGER DEFAULT 0")
+                conn.commit()
+            except sqlite3.OperationalError:
+                pass  # Column already exists
 
     def _set_file_permissions(self) -> None:
         """Set restrictive permissions on the database file (owner read/write only)."""
@@ -98,27 +108,51 @@ class Database:
     def activity_exists(self, garmin_activity_id: str) -> bool:
         """Check if an activity has been successfully processed.
 
-        Returns False for failed activities so they can be retried.
+        Returns False for failed activities that still have retries remaining.
+        Returns True for failed activities that have exhausted retries.
         """
+        from garava.config import MAX_RETRIES
+
         with self._connect() as conn:
             cursor = conn.execute(
-                "SELECT 1 FROM activities WHERE garmin_activity_id = ? AND status != ?",
+                "SELECT status, retry_count FROM activities WHERE garmin_activity_id = ?",
+                (garmin_activity_id,),
+            )
+            row = cursor.fetchone()
+            if row is None:
+                return False
+            status, retry_count = row[0], row[1] or 0
+            if status == ActivityStatus.FAILED.value:
+                return retry_count >= MAX_RETRIES
+            return True
+
+    def prepare_retry(self, garmin_activity_id: str) -> tuple[bool, int]:
+        """Prepare a failed activity for retry.
+
+        Returns (should_retry, retry_count). If max retries exceeded,
+        returns (False, count) and leaves the record intact.
+        """
+        from garava.config import MAX_RETRIES
+
+        with self._connect() as conn:
+            cursor = conn.execute(
+                "SELECT retry_count FROM activities WHERE garmin_activity_id = ? AND status = ?",
                 (garmin_activity_id, ActivityStatus.FAILED.value),
             )
-            return cursor.fetchone() is not None
+            row = cursor.fetchone()
+            if row is None:
+                return (False, 0)
 
-    def delete_failed_activity(self, garmin_activity_id: str) -> bool:
-        """Delete a failed activity record to allow retry.
+            retry_count = row[0] or 0
+            if retry_count >= MAX_RETRIES:
+                return (False, retry_count)
 
-        Returns True if a record was deleted.
-        """
-        with self._connect() as conn:
-            cursor = conn.execute(
+            conn.execute(
                 "DELETE FROM activities WHERE garmin_activity_id = ? AND status = ?",
                 (garmin_activity_id, ActivityStatus.FAILED.value),
             )
             conn.commit()
-            return cursor.rowcount > 0
+            return (True, retry_count)
 
     def insert_activity(self, activity: Activity) -> Activity:
         """Insert a new activity record."""
@@ -127,8 +161,9 @@ class Database:
                 """
                 INSERT INTO activities (
                     garmin_activity_id, activity_type, activity_name, garmin_start_time,
-                    status, strava_activity_id, skip_reason, error_message, processed_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    status, strava_activity_id, skip_reason, error_message, processed_at,
+                    retry_count
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     activity.garmin_activity_id,
@@ -140,6 +175,7 @@ class Database:
                     activity.skip_reason,
                     activity.error_message,
                     activity.processed_at,
+                    activity.retry_count,
                 ),
             )
             conn.commit()

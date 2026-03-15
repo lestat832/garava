@@ -52,7 +52,7 @@ def process_activity(
     activity_id = garmin_activity.activity_id
     activity_type = garmin_activity.activity_type
 
-    # Check if already successfully processed (idempotency)
+    # Check if already successfully processed (or max retries exceeded)
     if db.activity_exists(activity_id):
         logger.debug(f"Activity {activity_id} already processed, skipping")
         existing = db.get_activity(activity_id)
@@ -62,9 +62,13 @@ def process_activity(
             action="exists",
         )
 
-    # Clean up any previous failed record so we can retry
-    if db.delete_failed_activity(activity_id):
-        logger.info(f"Retrying previously failed activity {activity_id}")
+    # Check if there's a failed record eligible for retry
+    should_retry, retry_count = db.prepare_retry(activity_id)
+    if should_retry:
+        logger.info(
+            f"Retrying previously failed activity {activity_id} "
+            f"(attempt {retry_count + 1})"
+        )
 
     # Check filter
     if not activity_filter.should_sync(activity_type):
@@ -82,15 +86,16 @@ def process_activity(
             return ProcessResult(activity=activity, success=True, action="skipped")
 
     # Download FIT file
+    next_retry = retry_count + 1 if should_retry else 1
     try:
         fit_bytes = download_fit_file(garmin_client, activity_id)
     except FitExtractionError as e:
-        activity = _record_failed(db, garmin_activity, str(e))
+        activity = _record_failed(db, garmin_activity, str(e), next_retry)
         return ProcessResult(activity=activity, success=False, action="failed")
     except GarthException:
         raise  # Let auth/API errors propagate for retry at the engine level
     except Exception as e:
-        activity = _record_failed(db, garmin_activity, f"Download failed: {e}")
+        activity = _record_failed(db, garmin_activity, f"Download failed: {e}", next_retry)
         return ProcessResult(activity=activity, success=False, action="failed")
 
     # Upload to Strava
@@ -111,7 +116,7 @@ def process_activity(
         activity = _record_synced(db, garmin_activity, result.strava_activity_id)
         return ProcessResult(activity=activity, success=True, action="synced")
 
-    activity = _record_failed(db, garmin_activity, result.error or "Unknown error")
+    activity = _record_failed(db, garmin_activity, result.error or "Unknown error", next_retry)
     return ProcessResult(activity=activity, success=False, action="failed")
 
 
@@ -182,8 +187,11 @@ def _record_failed(
     db: Database,
     garmin_activity: GarminActivity,
     error: str,
+    retry_count: int = 0,
 ) -> Activity:
     """Record a failed activity."""
+    from garava.config import MAX_RETRIES
+
     activity = Activity(
         garmin_activity_id=garmin_activity.activity_id,
         activity_type=garmin_activity.activity_type,
@@ -192,7 +200,17 @@ def _record_failed(
         status=ActivityStatus.FAILED,
         error_message=error,
         processed_at=datetime.utcnow().isoformat(),
+        retry_count=retry_count,
     )
     db.insert_activity(activity)
-    logger.error(f"Failed: {garmin_activity.activity_id} - {error}")
+    if retry_count >= MAX_RETRIES:
+        logger.error(
+            f"Permanently failed: {garmin_activity.activity_id} - {error} "
+            f"(exhausted {MAX_RETRIES} retries)"
+        )
+    else:
+        logger.error(
+            f"Failed: {garmin_activity.activity_id} - {error} "
+            f"(retry {retry_count}/{MAX_RETRIES})"
+        )
     return activity
