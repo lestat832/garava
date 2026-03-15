@@ -37,6 +37,9 @@ class Config:
     # Gear assignment
     gear_rules: str = field(default_factory=lambda: os.getenv("GARAVA_GEAR_RULES", ""))
 
+    # Healthcheck (ping URL for sync health monitoring)
+    healthcheck_url: str = field(default_factory=lambda: os.getenv("GARAVA_HEALTHCHECK_URL", ""))
+
     def __post_init__(self) -> None:
         """Parse blocked types from env if not already set."""
         if not self.blocked_activity_types:

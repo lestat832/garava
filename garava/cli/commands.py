@@ -20,6 +20,7 @@ from garava.models import ActivityStatus
 from garava.strava.auth import run_oauth_flow
 from garava.strava.client import StravaClient
 from garava.sync.core import SyncCycleResult, SyncEngine
+from garava.sync.healthcheck import ping_healthcheck
 
 
 def setup_logging(level: str, log_dir: Path | None = None) -> None:
@@ -161,6 +162,7 @@ def run(ctx: click.Context, once: bool) -> None:
         click.echo("Running single sync cycle...")
         result = engine.run_cycle()
         _print_cycle_result(result)
+        _ping_sync_health(config, result)
     else:
         # Continuous mode — sync at :00, :15, :30, :45
         click.echo("Starting sync service (schedule: :00, :15, :30, :45)")
@@ -169,6 +171,7 @@ def run(ctx: click.Context, once: bool) -> None:
         try:
             result = engine.run_cycle()
             _print_cycle_result(result)
+            _ping_sync_health(config, result)
 
             while True:
                 sleep_seconds, next_time = _seconds_until_next_quarter_hour()
@@ -177,6 +180,7 @@ def run(ctx: click.Context, once: bool) -> None:
 
                 result = engine.run_cycle()
                 _print_cycle_result(result)
+                _ping_sync_health(config, result)
 
         except KeyboardInterrupt:
             click.echo("\nShutting down...")
@@ -278,6 +282,14 @@ def _seconds_until_next_quarter_hour(now: datetime | None = None) -> tuple[float
         next_time = now.replace(minute=next_quarter, second=0, microsecond=0)
     seconds = max((next_time - now).total_seconds(), 1.0)
     return seconds, next_time
+
+
+def _ping_sync_health(config: Config, result: SyncCycleResult) -> None:
+    """Ping healthcheck URL based on sync cycle outcome."""
+    if not config.healthcheck_url:
+        return
+    has_failures = result.run.activities_failed > 0 or result.run.error is not None
+    ping_healthcheck(config.healthcheck_url, fail=has_failures)
 
 
 def _print_cycle_result(result: SyncCycleResult) -> None:
