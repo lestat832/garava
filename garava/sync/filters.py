@@ -72,6 +72,7 @@ DEFAULT_BLOCKED_TYPES = [
 
 # Other types that users might want to optionally block
 OPTIONAL_BLOCKED_TYPES = [
+    "indoor_cycling",  # Indoor trainer - block when Karoo handles cycling
     "indoor_cardio",  # Often treadmill warmups before strength
     "breathwork",  # Meditation/breathing exercises
     "yoga",  # Some prefer Garmin yoga separate
